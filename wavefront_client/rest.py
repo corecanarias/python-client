@@ -98,15 +98,21 @@ class RESTClientObject(object):
         # key file
         key_file = Configuration().key_file
 
+        pool_manager_options = {
+            'num_pools': pools_size,
+            'cert_reqs': cert_reqs,
+            'ca_certs': ca_certs,
+            'cert_file': cert_file,
+            'key_file': key_file
+        }
         # https pool manager
-        self.pool_manager = urllib3.ProxyManager(
-            proxy_url=os.environ['https_proxy'],
-            num_pools=pools_size,
-            cert_reqs=cert_reqs,
-            ca_certs=ca_certs,
-            cert_file=cert_file,
-            key_file=key_file
-        )
+        if 'https_proxy' in os.environ:
+            self.pool_manager = urllib3.proxy_from_url(
+                os.environ['https_proxy'],
+                **pool_manager_options
+            )
+        else:
+            self.pool_manager = urllib3.PoolManager(**pool_manager_options)
 
     def request(self, method, url, query_params=None, headers=None,
                 body=None, post_params=None):
